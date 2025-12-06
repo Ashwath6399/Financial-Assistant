@@ -1,0 +1,29 @@
+# Trading Journal Analytics - Minimal Requirements
+# Only essential libraries to run the core application
+
+# Core
+numpy==1.24.3
+pandas==2.0.3
+
+# Web UI
+Flask==3.0.0
+
+# Machine Learning
+scikit-learn==1.3.2
+xgboost==2.0.3
+tensorflow==2.15.0
+keras==3.0.5
+
+# Visualization
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# Financial Data
+yfinance==0.2.35
+
+# AI Integration
+google-generativeai==0.3.2
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
