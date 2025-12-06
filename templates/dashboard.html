@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Journal Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <h1>Trading Journal Analytics</h1>
+            <p class="header-subtitle">ML-Enhanced Trading Performance Dashboard</p>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-navigation">
+        <div class="container">
+            <div class="tab-list">
+                <button class="tab-btn active" data-tab="overview">
+                    <span class="tab-icon">&#127968;</span>
+                    <span class="tab-label">Overview</span>
+                </button>
+                <button class="tab-btn" data-tab="account">
+                    <span class="tab-icon">&#128200;</span>
+                    <span class="tab-label">Account Performance</span>
+                </button>
+                <button class="tab-btn" data-tab="ml-models">
+                    <span class="tab-icon">&#129302;</span>
+                    <span class="tab-label">ML Models</span>
+                </button>
+                <button class="tab-btn" data-tab="trades">
+                    <span class="tab-icon">&#128202;</span>
+                    <span class="tab-label">Trade Explorer</span>
+                </button>
+                <button class="tab-btn" data-tab="screener">
+                    <span class="tab-icon">&#128269;</span>
+                    <span class="tab-label">Trade Screener</span>
+                </button>
+                <button class="tab-btn" data-tab="market">
+                    <span class="tab-icon">&#128176;</span>
+                    <span class="tab-label">Market Data</span>
+                </button>
+                <button class="tab-btn" data-tab="advisor">
+                    <span class="tab-icon">&#129302;</span>
+                    <span class="tab-label">AI Advisor</span>
+                </button>
+                <button class="tab-btn" data-tab="database">
+                    <span class="tab-icon">&#128451;</span>
+                    <span class="tab-label">Database</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+
+        <!-- ==================== TAB 1: OVERVIEW ==================== -->
+        <div id="tab-overview" class="tab-content active">
+            <!-- Portfolio Summary Cards -->
+            <section class="section-header">
+                <h2>Portfolio Overview</h2>
+                <p class="section-subtitle">See your total P&L, win rates, and trading volume at a glance. Identify top-performing accounts and track portfolio health.</p>
+            </section>
+
+            <section class="overview-stats">
+                <div class="stat-card large primary">
+                    <div class="stat-icon">&#128176;</div>
+                    <div class="stat-content">
+                        <h3>Total Net P&L</h3>
+                        <div class="stat-value" id="overview-total-pnl">$0.00</div>
+                        <div class="stat-detail" id="overview-pnl-detail">Across all accounts</div>
+                    </div>
+                </div>
+                <div class="stat-card large">
+                    <div class="stat-icon">&#128202;</div>
+                    <div class="stat-content">
+                        <h3>Total Trades</h3>
+                        <div class="stat-value" id="overview-total-trades">0</div>
+                        <div class="stat-detail" id="overview-trades-detail">Executed trades</div>
+                    </div>
+                </div>
+                <div class="stat-card large">
+                    <div class="stat-icon">&#128188;</div>
+                    <div class="stat-content">
+                        <h3>Active Accounts</h3>
+                        <div class="stat-value" id="overview-total-accounts">0</div>
+                        <div class="stat-detail">Trading accounts</div>
+                    </div>
+                </div>
+                <div class="stat-card large">
+                    <div class="stat-icon">&#127919;</div>
+                    <div class="stat-content">
+                        <h3>Avg Win Rate</h3>
+                        <div class="stat-value" id="overview-avg-winrate">0%</div>
+                        <div class="stat-detail">Portfolio average</div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Total Net P&L:</strong> <span class="positive">Green = profitable</span>, <span class="negative">Red = losing</span>.
+                    <strong>Win Rate:</strong> Above <span class="positive">50%</span> is good; above <span class="positive">60%</span> is excellent.
+                    Combine with Profit Factor (Account tab) for full picture.
+                </div>
+            </div>
+
+            <!-- Performance Highlights -->
+            <section class="highlights-section">
+                <div class="highlight-card positive">
+                    <div class="highlight-header">
+                        <span class="highlight-icon">&#11014;</span>
+                        <h3>Best Performer</h3>
+                    </div>
+                    <div class="highlight-content">
+                        <div class="highlight-account" id="best-account-id">--</div>
+                        <div class="highlight-value" id="best-account-pnl">$0.00</div>
+                        <div class="highlight-detail" id="best-account-winrate">Win Rate: --%</div>
+                    </div>
+                </div>
+                <div class="highlight-card negative">
+                    <div class="highlight-header">
+                        <span class="highlight-icon">&#11015;</span>
+                        <h3>Needs Attention</h3>
+                    </div>
+                    <div class="highlight-content">
+                        <div class="highlight-account" id="worst-account-id">--</div>
+                        <div class="highlight-value" id="worst-account-pnl">$0.00</div>
+                        <div class="highlight-detail" id="worst-account-winrate">Win Rate: --%</div>
+                    </div>
+                </div>
+                <div class="highlight-card info">
+                    <div class="highlight-header">
+                        <span class="highlight-icon">&#128640;</span>
+                        <h3>Biggest Win</h3>
+                    </div>
+                    <div class="highlight-content">
+                        <div class="highlight-account" id="biggest-win-symbol">--</div>
+                        <div class="highlight-value" id="biggest-win-amount">$0.00</div>
+                        <div class="highlight-detail" id="biggest-win-account">Account: --</div>
+                    </div>
+                </div>
+                <div class="highlight-card warning">
+                    <div class="highlight-header">
+                        <span class="highlight-icon">&#128680;</span>
+                        <h3>Biggest Loss</h3>
+                    </div>
+                    <div class="highlight-content">
+                        <div class="highlight-account" id="biggest-loss-symbol">--</div>
+                        <div class="highlight-value" id="biggest-loss-amount">$0.00</div>
+                        <div class="highlight-detail" id="biggest-loss-account">Account: --</div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Best Performer:</strong> Study this account's strategy for replication. <strong>Needs Attention:</strong> Review for risk management issues.
+                    <strong>Biggest Win/Loss:</strong> Large outliers may indicate high-risk positions. Aim for consistent gains over large swings.
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <section class="overview-charts">
+                <div class="chart-card full-width">
+                    <h3>P&L by Account</h3>
+                    <canvas id="accountPnlChart"></canvas>
+                    <div class="interpretation-guide">
+                        <div class="guide-header">
+                            <span class="guide-icon">&#128161;</span>
+                            <span class="guide-title">How to Interpret</span>
+                        </div>
+                        <div class="guide-content">
+                            Each bar shows the net P&L for each account. <span class="positive">Green bars</span> = profitable accounts, <span class="negative">Red bars</span> = losing accounts.
+                            Look for diversification: if all accounts follow similar patterns, you may be overexposed to one strategy. Aim for uncorrelated performance across accounts.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ML & Benchmark Summary -->
+            <section class="summary-section">
+                <div class="summary-card">
+                    <h3>&#129302; ML Model Status</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="summary-label">Predictions Made</span>
+                            <span class="summary-value" id="ml-predictions-count">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Overall Accuracy</span>
+                            <span class="summary-value" id="ml-overall-accuracy">0%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">TAKE Accuracy</span>
+                            <span class="summary-value" id="ml-take-accuracy">0%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">AVOID Accuracy</span>
+                            <span class="summary-value" id="ml-avoid-accuracy">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <h3>&#128200; Benchmark Status</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="summary-label">Accounts Beat S&P 500</span>
+                            <span class="summary-value" id="benchmark-beat-count">0 / 0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Avg Sharpe Ratio</span>
+                            <span class="summary-value" id="avg-sharpe">0.00</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Avg Outperformance</span>
+                            <span class="summary-value" id="avg-outperformance">0%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Price Data Points</span>
+                            <span class="summary-value" id="price-data-count">0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>ML Accuracy:</strong> Above <span class="positive">55%</span> adds value over random. <strong>TAKE vs AVOID:</strong> Higher TAKE accuracy = model identifies winning trades well.
+                    <strong>Sharpe > 1.0</strong> is good, <strong>> 2.0</strong> is excellent. <strong>Beating S&P 500</strong> shows your active trading outperforms passive investing.
+                </div>
+            </div>
+
+            <!-- Data Coverage -->
+            <section class="data-coverage-section">
+                <div class="coverage-card">
+                    <h3>&#128197; Data Coverage</h3>
+                    <div class="coverage-grid">
+                        <div class="coverage-item">
+                            <span class="coverage-icon">&#128200;</span>
+                            <span class="coverage-value" id="data-symbols">0</span>
+                            <span class="coverage-label">Instruments</span>
+                        </div>
+                        <div class="coverage-item">
+                            <span class="coverage-icon">&#128197;</span>
+                            <span class="coverage-value" id="data-date-range">--</span>
+                            <span class="coverage-label">Date Range</span>
+                        </div>
+                        <div class="coverage-item">
+                            <span class="coverage-icon">&#128202;</span>
+                            <span class="coverage-value" id="data-price-points">0</span>
+                            <span class="coverage-label">Price Records</span>
+                        </div>
+                        <div class="coverage-item">
+                            <span class="coverage-icon">&#128176;</span>
+                            <span class="coverage-value" id="data-fills">0</span>
+                            <span class="coverage-label">Trade Fills</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== TAB 2: ACCOUNT PERFORMANCE ==================== -->
+        <div id="tab-account" class="tab-content">
+            <!-- Account Selector -->
+            <section class="section-header">
+                <h2>Account Performance</h2>
+                <p class="section-subtitle">Drill down into individual account metrics. Analyze P&L curves, drawdowns, and per-instrument performance.</p>
+                <div class="account-selector">
+                    <label for="accountSelect">Select Account:</label>
+                    <select id="accountSelect">
+                        <option value="">Loading accounts...</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Account Dashboard Content -->
+            <div id="accountDashboard" style="display: none;">
+
+                <!-- Primary Metrics Row -->
+                <section class="section-title">
+                    <h3>Key Performance Metrics</h3>
+                </section>
+                <section class="metrics-grid primary-metrics">
+                    <!-- P&L Card -->
+                    <div class="metric-card featured" data-metric="net_pnl">
+                        <div class="metric-icon">&#128176;</div>
+                        <div class="metric-content">
+                            <h3>Net P&L</h3>
+                            <div class="metric-value" id="metric-net_pnl">$0.00</div>
+                            <div class="metric-change" id="change-net_pnl"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('net_pnl')">&#8505;</div>
+                    </div>
+
+                    <!-- Win Rate Card -->
+                    <div class="metric-card" data-metric="win_rate">
+                        <div class="metric-icon">&#127919;</div>
+                        <div class="metric-content">
+                            <h3>Win Rate</h3>
+                            <div class="metric-value" id="metric-win_rate">0%</div>
+                            <div class="metric-change" id="change-win_rate"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('win_rate')">&#8505;</div>
+                    </div>
+
+                    <!-- Total Trades Card -->
+                    <div class="metric-card" data-metric="total_trades">
+                        <div class="metric-icon">&#128260;</div>
+                        <div class="metric-content">
+                            <h3>Total Trades</h3>
+                            <div class="metric-value" id="metric-total_trades">0</div>
+                            <div class="metric-change" id="change-total_trades"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('total_trades')">&#8505;</div>
+                    </div>
+
+                    <!-- Profit Factor Card -->
+                    <div class="metric-card" data-metric="profit_factor">
+                        <div class="metric-icon">&#128200;</div>
+                        <div class="metric-content">
+                            <h3>Profit Factor</h3>
+                            <div class="metric-value" id="metric-profit_factor">0.00</div>
+                            <div class="metric-change" id="change-profit_factor"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('profit_factor')">&#8505;</div>
+                    </div>
+                </section>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>Net P&L:</strong> Your bottom line profit or loss. <strong>Win Rate:</strong> <span class="positive">>50%</span> is above average.
+                        <strong>Profit Factor:</strong> Gross profit / Gross loss. <span class="positive">>1.5</span> is good, <span class="positive">>2.0</span> is excellent. Click the info icon for detailed formulas.
+                    </div>
+                </div>
+
+                <!-- Risk-Adjusted Returns -->
+                <section class="section-title">
+                    <h3>Risk-Adjusted Returns</h3>
+                </section>
+                <section class="metrics-grid">
+                    <!-- Sharpe Ratio Card -->
+                    <div class="metric-card" data-metric="sharpe_ratio">
+                        <div class="metric-icon">&#128200;</div>
+                        <div class="metric-content">
+                            <h3>Sharpe Ratio</h3>
+                            <div class="metric-value" id="metric-sharpe_ratio">0.00</div>
+                            <div class="metric-change" id="change-sharpe_ratio"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('sharpe_ratio')">&#8505;</div>
+                    </div>
+
+                    <!-- Sortino Ratio Card -->
+                    <div class="metric-card" data-metric="sortino_ratio">
+                        <div class="metric-icon">&#127922;</div>
+                        <div class="metric-content">
+                            <h3>Sortino Ratio</h3>
+                            <div class="metric-value" id="metric-sortino_ratio">0.00</div>
+                            <div class="metric-change" id="change-sortino_ratio"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('sortino_ratio')">&#8505;</div>
+                    </div>
+
+                    <!-- Calmar Ratio Card -->
+                    <div class="metric-card" data-metric="calmar_ratio">
+                        <div class="metric-icon">&#128202;</div>
+                        <div class="metric-content">
+                            <h3>Calmar Ratio</h3>
+                            <div class="metric-value" id="metric-calmar_ratio">0.00</div>
+                            <div class="metric-change" id="change-calmar_ratio"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('calmar_ratio')">&#8505;</div>
+                    </div>
+
+                    <!-- Risk/Reward Ratio Card -->
+                    <div class="metric-card" data-metric="risk_reward_ratio">
+                        <div class="metric-icon">&#9878;</div>
+                        <div class="metric-content">
+                            <h3>Risk/Reward</h3>
+                            <div class="metric-value" id="metric-risk_reward_ratio">0.00</div>
+                            <div class="metric-change" id="change-risk_reward_ratio"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('risk_reward_ratio')">&#8505;</div>
+                    </div>
+                </section>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>Sharpe Ratio:</strong> Return per unit of risk. <span class="positive">>1</span> good, <span class="positive">>2</span> excellent.
+                        <strong>Sortino:</strong> Like Sharpe but only penalizes downside volatility. <strong>Calmar:</strong> Annual return / Max Drawdown.
+                        <strong>Risk/Reward:</strong> Average win / Average loss. <span class="positive">>1.5</span> is solid.
+                    </div>
+                </div>
+
+                <!-- Risk Metrics -->
+                <section class="section-title">
+                    <h3>Risk Metrics</h3>
+                </section>
+                <section class="metrics-grid">
+                    <!-- Max Drawdown Card -->
+                    <div class="metric-card risk" data-metric="max_drawdown">
+                        <div class="metric-icon">&#128201;</div>
+                        <div class="metric-content">
+                            <h3>Max Drawdown</h3>
+                            <div class="metric-value" id="metric-max_drawdown">0%</div>
+                            <div class="metric-change" id="change-max_drawdown"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('max_drawdown')">&#8505;</div>
+                    </div>
+
+                    <!-- VaR 95% Card -->
+                    <div class="metric-card risk" data-metric="var_95_pct">
+                        <div class="metric-icon">&#9888;</div>
+                        <div class="metric-content">
+                            <h3>VaR (95%)</h3>
+                            <div class="metric-value" id="metric-var_95_pct">0%</div>
+                            <div class="metric-change" id="change-var_95_pct"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('var_95_pct')">&#8505;</div>
+                    </div>
+
+                    <!-- Volatility Card -->
+                    <div class="metric-card risk" data-metric="volatility">
+                        <div class="metric-icon">&#127754;</div>
+                        <div class="metric-content">
+                            <h3>Volatility</h3>
+                            <div class="metric-value" id="metric-volatility">0%</div>
+                            <div class="metric-change" id="change-volatility"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('volatility')">&#8505;</div>
+                    </div>
+
+                    <!-- Largest Loss Card -->
+                    <div class="metric-card risk" data-metric="largest_loss">
+                        <div class="metric-icon">&#128308;</div>
+                        <div class="metric-content">
+                            <h3>Largest Loss</h3>
+                            <div class="metric-value" id="metric-largest_loss">$0.00</div>
+                            <div class="metric-change" id="change-largest_loss"></div>
+                        </div>
+                        <div class="metric-info-btn" onclick="showMetricFormula('largest_loss')">&#8505;</div>
+                    </div>
+                </section>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>Max Drawdown:</strong> Largest peak-to-trough decline. <span class="negative">>20%</span> signals high risk.
+                        <strong>VaR (95%):</strong> Maximum expected loss 95% of the time. <strong>Volatility:</strong> Standard deviation of returns; lower = more stable performance.
+                    </div>
+                </div>
+
+                <!-- Trade Statistics -->
+                <section class="section-title">
+                    <h3>Trade Statistics</h3>
+                </section>
+                <section class="metrics-grid compact">
+                    <div class="metric-card compact" data-metric="winning_trades">
+                        <div class="metric-content">
+                            <h3>Winning Trades</h3>
+                            <div class="metric-value" id="metric-winning_trades">0</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="losing_trades">
+                        <div class="metric-content">
+                            <h3>Losing Trades</h3>
+                            <div class="metric-value" id="metric-losing_trades">0</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="avg_win">
+                        <div class="metric-content">
+                            <h3>Average Win</h3>
+                            <div class="metric-value positive" id="metric-avg_win">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="avg_loss">
+                        <div class="metric-content">
+                            <h3>Average Loss</h3>
+                            <div class="metric-value negative" id="metric-avg_loss">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="largest_win">
+                        <div class="metric-content">
+                            <h3>Largest Win</h3>
+                            <div class="metric-value positive" id="metric-largest_win">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="gross_profit">
+                        <div class="metric-content">
+                            <h3>Gross Profit</h3>
+                            <div class="metric-value positive" id="metric-gross_profit">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="gross_loss">
+                        <div class="metric-content">
+                            <h3>Gross Loss</h3>
+                            <div class="metric-value negative" id="metric-gross_loss">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="metric-card compact" data-metric="expectancy">
+                        <div class="metric-content">
+                            <h3>Expectancy</h3>
+                            <div class="metric-value" id="metric-expectancy">$0.00</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Win/Loss Streaks Section -->
+                <section class="section-title">
+                    <h3>Win/Loss Streaks</h3>
+                </section>
+                <section class="streaks-section">
+                    <div class="streak-card positive">
+                        <div class="streak-header">
+                            <span class="streak-icon">&#127942;</span>
+                            <h4>Current Win Streak</h4>
+                        </div>
+                        <div class="streak-value" id="current-win-streak">0</div>
+                        <div class="streak-detail">consecutive wins</div>
+                    </div>
+                    <div class="streak-card negative">
+                        <div class="streak-header">
+                            <span class="streak-icon">&#128308;</span>
+                            <h4>Current Loss Streak</h4>
+                        </div>
+                        <div class="streak-value" id="current-loss-streak">0</div>
+                        <div class="streak-detail">consecutive losses</div>
+                    </div>
+                    <div class="streak-card best">
+                        <div class="streak-header">
+                            <span class="streak-icon">&#11088;</span>
+                            <h4>Max Win Streak</h4>
+                        </div>
+                        <div class="streak-value" id="max-win-streak">0</div>
+                        <div class="streak-detail">best run</div>
+                    </div>
+                    <div class="streak-card worst">
+                        <div class="streak-header">
+                            <span class="streak-icon">&#9888;</span>
+                            <h4>Max Loss Streak</h4>
+                        </div>
+                        <div class="streak-value" id="max-loss-streak">0</div>
+                        <div class="streak-detail">worst run</div>
+                    </div>
+                </section>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        Streaks reveal psychological and strategy patterns. <strong>Long loss streaks</strong> may indicate need for strategy review or position sizing adjustment.
+                        If <strong>current streak = max streak</strong>, you may be in an unusual market condition. Consider reducing position sizes.
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <section class="section-title">
+                    <h3>Performance Charts</h3>
+                </section>
+                <section class="charts-section">
+                    <!-- Cumulative P&L Chart -->
+                    <div class="chart-card">
+                        <h3>Cumulative P&L Over Time</h3>
+                        <canvas id="pnlChart"></canvas>
+                        <div class="interpretation-guide">
+                            <div class="guide-header">
+                                <span class="guide-icon">&#128161;</span>
+                                <span class="guide-title">How to Interpret</span>
+                            </div>
+                            <div class="guide-content">
+                                An <strong>upward-sloping line</strong> indicates consistent profitability. <strong>Flat periods</strong> may signal market conditions unsuitable for your strategy.
+                                <strong>Sharp drops</strong> represent drawdowns - understand what caused them. Look for smooth, steady growth over erratic spikes.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Drawdown Chart -->
+                    <div class="chart-card">
+                        <h3>Drawdown Analysis</h3>
+                        <canvas id="drawdownChart"></canvas>
+                        <div class="interpretation-guide">
+                            <div class="guide-header">
+                                <span class="guide-icon">&#128161;</span>
+                                <span class="guide-title">How to Interpret</span>
+                            </div>
+                            <div class="guide-content">
+                                Shows how much you've lost from peak equity at any point. <span class="negative">Deeper valleys = larger drawdowns</span>.
+                                <strong>Recovery time</strong> is important: how long to get back to previous highs? Frequent, shallow drawdowns are better than rare, deep ones.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Monthly Returns Heatmap -->
+                <section class="section-title">
+                    <h3>Monthly Returns</h3>
+                </section>
+                <section class="heatmap-section">
+                    <div class="chart-card full-width">
+                        <div class="heatmap-container" id="monthlyReturnsHeatmap">
+                            <!-- Heatmap will be generated by JavaScript -->
+                        </div>
+                        <div class="heatmap-legend">
+                            <span class="legend-item negative-3">< -5%</span>
+                            <span class="legend-item negative-2">-5% to -2%</span>
+                            <span class="legend-item negative-1">-2% to 0%</span>
+                            <span class="legend-item neutral">0%</span>
+                            <span class="legend-item positive-1">0% to 2%</span>
+                            <span class="legend-item positive-2">2% to 5%</span>
+                            <span class="legend-item positive-3">> 5%</span>
+                        </div>
+                        <div class="interpretation-guide">
+                            <div class="guide-header">
+                                <span class="guide-icon">&#128161;</span>
+                                <span class="guide-title">How to Interpret</span>
+                            </div>
+                            <div class="guide-content">
+                                <span class="positive">Green cells</span> = profitable months, <span class="negative">Red cells</span> = losing months. Look for seasonal patterns - are certain months consistently profitable?
+                                <strong>Consistent green across months</strong> = robust strategy. <strong>Clustered red</strong> may indicate vulnerability to specific market conditions.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ML Recommendations Chart -->
+                <section class="section-title">
+                    <h3>ML Recommendations Analysis</h3>
+                </section>
+                <section class="charts-section">
+                    <!-- Performance Distribution -->
+                    <div class="chart-card">
+                        <h3>ML Recommendations Performance</h3>
+                        <canvas id="mlRecommendationsChart"></canvas>
+                        <div class="interpretation-guide">
+                            <div class="guide-header">
+                                <span class="guide-icon">&#128161;</span>
+                                <span class="guide-title">How to Interpret</span>
+                            </div>
+                            <div class="guide-content">
+                                Compares actual P&L when following vs ignoring ML recommendations. If <strong>TAKE trades are profitable</strong> and <strong>AVOID trades are losses</strong>, the model adds value.
+                                Use this to decide how much weight to give ML signals in your trading decisions.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trade Distribution -->
+                    <div class="chart-card">
+                        <h3>Trade P&L Distribution</h3>
+                        <canvas id="tradePnlDistChart"></canvas>
+                        <div class="interpretation-guide">
+                            <div class="guide-header">
+                                <span class="guide-icon">&#128161;</span>
+                                <span class="guide-title">How to Interpret</span>
+                            </div>
+                            <div class="guide-content">
+                                A <strong>bell curve centered right of zero</strong> is ideal. <strong>Long right tail</strong> = occasional big winners. <strong>Long left tail</strong> = risk of large losses.
+                                Aim for more mass on the positive side with controlled left tail (losses).
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Benchmark Comparison -->
+                <section class="section-title">
+                    <h3>Benchmark Comparison</h3>
+                </section>
+                <section class="benchmark-section">
+                    <div class="benchmark-card expanded">
+                        <h3>&#128200; Performance vs S&P 500</h3>
+                        <div class="benchmark-grid expanded">
+                            <div class="benchmark-item">
+                                <span class="benchmark-label">Account Return</span>
+                                <span class="benchmark-value" id="benchmark-account_return">0%</span>
+                            </div>
+                            <div class="benchmark-item">
+                                <span class="benchmark-label">S&P 500 Return</span>
+                                <span class="benchmark-value" id="benchmark-spy_return">0%</span>
+                            </div>
+                            <div class="benchmark-item featured">
+                                <span class="benchmark-label">Outperformance</span>
+                                <span class="benchmark-value large" id="benchmark-outperformance">0%</span>
+                            </div>
+                            <div class="benchmark-item">
+                                <span class="benchmark-label">Beat Market</span>
+                                <span class="benchmark-value" id="benchmark-beat_market">No</span>
+                            </div>
+                            <div class="benchmark-item">
+                                <span class="benchmark-label">Account Sharpe</span>
+                                <span class="benchmark-value" id="benchmark-account_sharpe">0.00</span>
+                            </div>
+                            <div class="benchmark-item">
+                                <span class="benchmark-label">S&P 500 Sharpe</span>
+                                <span class="benchmark-value" id="benchmark-spy_sharpe">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        Compares your performance to simply buying and holding S&P 500. <span class="positive">Positive outperformance</span> justifies active trading; <span class="negative">negative</span> suggests passive investing may be better.
+                        <strong>Higher Sharpe than S&P 500</strong> = better risk-adjusted returns from your strategy.
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Account Selected State -->
+            <div id="noAccountSelected" class="empty-state">
+                <div class="empty-icon">&#128188;</div>
+                <h3>Select an Account</h3>
+                <p>Choose an account from the dropdown above to view detailed performance metrics.</p>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: ML MODELS ==================== -->
+        <div id="tab-ml-models" class="tab-content">
+            <!-- Section Header -->
+            <section class="section-header">
+                <h2>ML Model Performance</h2>
+                <p class="section-subtitle">Compare XGBoost and Hybrid CNN-XGBoost models. Evaluate accuracy, precision, and feature importance to refine predictions.</p>
+            </section>
+
+            <!-- Model Summary Cards -->
+            <section class="ml-model-cards">
+                <div class="model-card xgboost">
+                    <div class="model-header">
+                        <span class="model-icon">&#128202;</span>
+                        <h3>XGBoost Model</h3>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat main">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="xgboost-accuracy">0%</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">Precision</span>
+                            <span class="stat-value" id="xgboost-precision">0%</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">Recall</span>
+                            <span class="stat-value" id="xgboost-recall">0%</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">F1 Score</span>
+                            <span class="stat-value" id="xgboost-f1">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card hybrid featured">
+                    <div class="model-header">
+                        <span class="model-icon">&#129302;</span>
+                        <h3>Hybrid Model</h3>
+                        <span class="model-badge">Primary</span>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat main">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="hybrid-accuracy">0%</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">Precision</span>
+                            <span class="stat-value" id="hybrid-precision">0%</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">Recall</span>
+                            <span class="stat-value" id="hybrid-recall">0%</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">F1 Score</span>
+                            <span class="stat-value" id="hybrid-f1">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card summary">
+                    <div class="model-header">
+                        <span class="model-icon">&#128176;</span>
+                        <h3>Total Impact</h3>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat main">
+                            <span class="stat-label">Total P&L</span>
+                            <span class="stat-value" id="ml-total-pnl">$0</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">Predictions</span>
+                            <span class="stat-value" id="ml-total-predictions">0</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="stat-label">Avg Probability</span>
+                            <span class="stat-value" id="ml-avg-probability">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Accuracy:</strong> % of correct predictions. <span class="positive">>55%</span> beats random chance.
+                    <strong>Precision:</strong> When model predicts WIN, how often correct? <strong>Recall:</strong> Of actual WINs, how many were predicted?
+                    <strong>F1 Score:</strong> Balance of precision/recall - higher = more reliable model.
+                </div>
+            </div>
+
+            <!-- Confusion Matrices -->
+            <section class="section-title">
+                <h3>Confusion Matrices</h3>
+            </section>
+            <section class="confusion-matrices">
+                <div class="confusion-card">
+                    <h4>XGBoost Model</h4>
+                    <div class="confusion-matrix" id="xgboost-confusion">
+                        <div class="cm-header">
+                            <div class="cm-corner"></div>
+                            <div class="cm-label">Pred: LOSS</div>
+                            <div class="cm-label">Pred: WIN</div>
+                        </div>
+                        <div class="cm-row">
+                            <div class="cm-label">Actual: LOSS</div>
+                            <div class="cm-cell tn" id="xgboost-tn">0</div>
+                            <div class="cm-cell fp" id="xgboost-fp">0</div>
+                        </div>
+                        <div class="cm-row">
+                            <div class="cm-label">Actual: WIN</div>
+                            <div class="cm-cell fn" id="xgboost-fn">0</div>
+                            <div class="cm-cell tp" id="xgboost-tp">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="confusion-card featured">
+                    <h4>Hybrid Model</h4>
+                    <div class="confusion-matrix" id="hybrid-confusion">
+                        <div class="cm-header">
+                            <div class="cm-corner"></div>
+                            <div class="cm-label">Pred: LOSS</div>
+                            <div class="cm-label">Pred: WIN</div>
+                        </div>
+                        <div class="cm-row">
+                            <div class="cm-label">Actual: LOSS</div>
+                            <div class="cm-cell tn" id="hybrid-tn">0</div>
+                            <div class="cm-cell fp" id="hybrid-fp">0</div>
+                        </div>
+                        <div class="cm-row">
+                            <div class="cm-label">Actual: WIN</div>
+                            <div class="cm-cell fn" id="hybrid-fn">0</div>
+                            <div class="cm-cell tp" id="hybrid-tp">0</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <span class="positive">TP (True Positive):</span> Correctly predicted WIN. <span class="positive">TN (True Negative):</span> Correctly predicted LOSS.
+                    <span class="negative">FP (False Positive):</span> Predicted WIN but was LOSS. <span class="negative">FN (False Negative):</span> Predicted LOSS but was WIN.
+                    Ideal: High TP+TN, Low FP+FN. <strong>Diagonal dominance</strong> = good model.
+                </div>
+            </div>
+
+            <!-- Recommendation & Confidence Performance -->
+            <section class="section-title">
+                <h3>Recommendation Performance</h3>
+            </section>
+            <section class="recommendation-cards">
+                <div class="rec-card take">
+                    <div class="rec-header">
+                        <span class="rec-icon">&#9989;</span>
+                        <h4>TAKE</h4>
+                    </div>
+                    <div class="rec-stats">
+                        <div class="rec-stat">
+                            <span class="rec-value" id="take-count">0</span>
+                            <span class="rec-label">Trades</span>
+                        </div>
+                        <div class="rec-stat">
+                            <span class="rec-value" id="take-accuracy">0%</span>
+                            <span class="rec-label">Accuracy</span>
+                        </div>
+                        <div class="rec-stat">
+                            <span class="rec-value" id="take-pnl">$0</span>
+                            <span class="rec-label">Total P&L</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rec-card avoid">
+                    <div class="rec-header">
+                        <span class="rec-icon">&#10060;</span>
+                        <h4>AVOID</h4>
+                    </div>
+                    <div class="rec-stats">
+                        <div class="rec-stat">
+                            <span class="rec-value" id="avoid-count">0</span>
+                            <span class="rec-label">Trades</span>
+                        </div>
+                        <div class="rec-stat">
+                            <span class="rec-value" id="avoid-accuracy">0%</span>
+                            <span class="rec-label">Accuracy</span>
+                        </div>
+                        <div class="rec-stat">
+                            <span class="rec-value" id="avoid-pnl">$0</span>
+                            <span class="rec-label">Total P&L</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rec-card uncertain">
+                    <div class="rec-header">
+                        <span class="rec-icon">&#10067;</span>
+                        <h4>UNCERTAIN</h4>
+                    </div>
+                    <div class="rec-stats">
+                        <div class="rec-stat">
+                            <span class="rec-value" id="uncertain-count">0</span>
+                            <span class="rec-label">Trades</span>
+                        </div>
+                        <div class="rec-stat">
+                            <span class="rec-value" id="uncertain-accuracy">0%</span>
+                            <span class="rec-label">Accuracy</span>
+                        </div>
+                        <div class="rec-stat">
+                            <span class="rec-value" id="uncertain-pnl">$0</span>
+                            <span class="rec-label">Total P&L</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>TAKE:</strong> Model recommends taking this trade. Ideally <span class="positive">positive P&L and high accuracy</span>.
+                    <strong>AVOID:</strong> Model suggests skipping. If AVOID trades are mostly losses, model correctly identified bad setups.
+                    <strong>UNCERTAIN:</strong> Model unsure - use additional judgment. Compare P&L across categories to evaluate model value.
+                </div>
+            </div>
+
+            <!-- Confidence Level Performance -->
+            <section class="section-title">
+                <h3>Confidence Level Performance</h3>
+            </section>
+            <section class="confidence-cards">
+                <div class="conf-card high">
+                    <div class="conf-header">
+                        <span class="conf-icon">&#128293;</span>
+                        <h4>HIGH Confidence</h4>
+                    </div>
+                    <div class="conf-stats">
+                        <div class="conf-stat">
+                            <span class="conf-value" id="high-count">0</span>
+                            <span class="conf-label">Trades</span>
+                        </div>
+                        <div class="conf-stat main">
+                            <span class="conf-value" id="high-accuracy">0%</span>
+                            <span class="conf-label">Accuracy</span>
+                        </div>
+                        <div class="conf-stat">
+                            <span class="conf-value" id="high-pnl">$0</span>
+                            <span class="conf-label">P&L</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="conf-card medium">
+                    <div class="conf-header">
+                        <span class="conf-icon">&#128992;</span>
+                        <h4>MEDIUM Confidence</h4>
+                    </div>
+                    <div class="conf-stats">
+                        <div class="conf-stat">
+                            <span class="conf-value" id="medium-count">0</span>
+                            <span class="conf-label">Trades</span>
+                        </div>
+                        <div class="conf-stat main">
+                            <span class="conf-value" id="medium-accuracy">0%</span>
+                            <span class="conf-label">Accuracy</span>
+                        </div>
+                        <div class="conf-stat">
+                            <span class="conf-value" id="medium-pnl">$0</span>
+                            <span class="conf-label">P&L</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="conf-card low">
+                    <div class="conf-header">
+                        <span class="conf-icon">&#128993;</span>
+                        <h4>LOW Confidence</h4>
+                    </div>
+                    <div class="conf-stats">
+                        <div class="conf-stat">
+                            <span class="conf-value" id="low-count">0</span>
+                            <span class="conf-label">Trades</span>
+                        </div>
+                        <div class="conf-stat main">
+                            <span class="conf-value" id="low-accuracy">0%</span>
+                            <span class="conf-label">Accuracy</span>
+                        </div>
+                        <div class="conf-stat">
+                            <span class="conf-value" id="low-pnl">$0</span>
+                            <span class="conf-label">P&L</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    Confidence indicates how certain the model is. <strong>HIGH confidence</strong> should have better accuracy than LOW.
+                    If accuracy doesn't improve with confidence, the model may not be well-calibrated. Consider <strong>only acting on HIGH confidence signals</strong>.
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <section class="section-title">
+                <h3>Performance Analysis</h3>
+            </section>
+            <section class="charts-section">
+                <div class="chart-card">
+                    <h3>Monthly Model Accuracy</h3>
+                    <canvas id="mlMonthlyAccuracyChart"></canvas>
+                    <div class="interpretation-guide">
+                        <div class="guide-header">
+                            <span class="guide-icon">&#128161;</span>
+                            <span class="guide-title">How to Interpret</span>
+                        </div>
+                        <div class="guide-content">
+                            Track model accuracy over time. <strong>Stable accuracy</strong> = reliable model. <strong>Declining accuracy</strong> may indicate changing market conditions or model drift.
+                            Consider retraining if accuracy consistently falls below historical averages.
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Prediction by Symbol</h3>
+                    <canvas id="mlSymbolChart"></canvas>
+                    <div class="interpretation-guide">
+                        <div class="guide-header">
+                            <span class="guide-icon">&#128161;</span>
+                            <span class="guide-title">How to Interpret</span>
+                        </div>
+                        <div class="guide-content">
+                            Shows how well the model performs on different symbols. Some stocks may be more predictable than others.
+                            <strong>Focus on symbols where model accuracy is highest</strong> for better results.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Predictions Table -->
+            <section class="section-title">
+                <h3>Recent Predictions</h3>
+            </section>
+            <section class="predictions-table-section">
+                <div class="table-card">
+                    <table class="predictions-table" id="recentPredictionsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Account</th>
+                                <th>Symbol</th>
+                                <th>Recommendation</th>
+                                <th>Confidence</th>
+                                <th>Probability</th>
+                                <th>Outcome</th>
+                                <th>P&L</th>
+                                <th>Correct</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentPredictionsBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="table-info" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="pagination-info">Showing <span id="predictions-showing-from">0</span> - <span id="predictions-showing-to">0</span> of <span id="predictions-showing-total">0</span> predictions</span>
+                        <div class="pagination" id="predictionsPagination">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== TAB 4: TRADE EXPLORER ==================== -->
+        <div id="tab-trades" class="tab-content">
+            <!-- Section Header -->
+            <section class="section-header">
+                <h2>Trade Explorer</h2>
+                <p class="section-subtitle">Browse all historical trades with filters. View entry/exit details, P&L, and ML predictions for each trade.</p>
+            </section>
+
+            <!-- Trade Stats Summary -->
+            <section class="trade-stats-cards">
+                <div class="trade-stat-card">
+                    <div class="trade-stat-icon">&#128202;</div>
+                    <div class="trade-stat-content">
+                        <span class="trade-stat-value" id="trades-total">0</span>
+                        <span class="trade-stat-label">Total Trades</span>
+                    </div>
+                </div>
+                <div class="trade-stat-card positive">
+                    <div class="trade-stat-icon">&#9989;</div>
+                    <div class="trade-stat-content">
+                        <span class="trade-stat-value" id="trades-winning">0</span>
+                        <span class="trade-stat-label">Winning Trades</span>
+                    </div>
+                </div>
+                <div class="trade-stat-card negative">
+                    <div class="trade-stat-icon">&#10060;</div>
+                    <div class="trade-stat-content">
+                        <span class="trade-stat-value" id="trades-losing">0</span>
+                        <span class="trade-stat-label">Losing Trades</span>
+                    </div>
+                </div>
+                <div class="trade-stat-card">
+                    <div class="trade-stat-icon">&#127919;</div>
+                    <div class="trade-stat-content">
+                        <span class="trade-stat-value" id="trades-winrate">0%</span>
+                        <span class="trade-stat-label">Win Rate</span>
+                    </div>
+                </div>
+                <div class="trade-stat-card highlight">
+                    <div class="trade-stat-icon">&#128176;</div>
+                    <div class="trade-stat-content">
+                        <span class="trade-stat-value" id="trades-total-pnl">$0</span>
+                        <span class="trade-stat-label">Total P&L</span>
+                    </div>
+                </div>
+                <div class="trade-stat-card">
+                    <div class="trade-stat-icon">&#128200;</div>
+                    <div class="trade-stat-content">
+                        <span class="trade-stat-value" id="trades-avg-pnl">$0</span>
+                        <span class="trade-stat-label">Avg P&L</span>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Win Rate above 50%</strong> is good; <strong>Total P&L positive</strong> = overall profitable.
+                    <strong>Avg P&L</strong> shows expected value per trade. Compare winning vs losing trades to understand risk/reward profile.
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <section class="section-title">
+                <h3>Filters</h3>
+            </section>
+            <section class="trade-filters">
+                <div class="filter-group">
+                    <label for="filter-account">Account</label>
+                    <select id="filter-account" class="filter-select">
+                        <option value="">All Accounts</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-symbol">Symbol</label>
+                    <select id="filter-symbol" class="filter-select">
+                        <option value="">All Symbols</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-recommendation">Recommendation</label>
+                    <select id="filter-recommendation" class="filter-select">
+                        <option value="">All</option>
+                        <option value="TAKE">TAKE</option>
+                        <option value="AVOID">AVOID</option>
+                        <option value="UNCERTAIN">UNCERTAIN</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-confidence">Confidence</label>
+                    <select id="filter-confidence" class="filter-select">
+                        <option value="">All</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="LOW">LOW</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-outcome">Outcome</label>
+                    <select id="filter-outcome" class="filter-select">
+                        <option value="">All</option>
+                        <option value="WIN">WIN</option>
+                        <option value="LOSS">LOSS</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-date-from">From Date</label>
+                    <input type="date" id="filter-date-from" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label for="filter-date-to">To Date</label>
+                    <input type="date" id="filter-date-to" class="filter-input">
+                </div>
+                <div class="filter-actions">
+                    <button class="filter-btn apply" onclick="applyTradeFilters()">Apply Filters</button>
+                    <button class="filter-btn reset" onclick="resetTradeFilters()">Reset</button>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="section-title">
+                <h3>Trade Analysis</h3>
+            </section>
+            <section class="charts-section">
+                <div class="chart-card">
+                    <h3>P&L Distribution</h3>
+                    <canvas id="tradePnlDistributionChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Win Rate by Symbol (Top 10)</h3>
+                    <canvas id="tradeSymbolChart"></canvas>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>P&L Distribution:</strong> A bell curve centered right of zero shows consistent profitability. Wide spread indicates high variance.
+                    <strong>Win Rate by Symbol:</strong> Focus on symbols with <span class="positive">>55% win rate</span> and sufficient trade count. Avoid symbols with <span class="negative"><45%</span> unless risk/reward is exceptional.
+                </div>
+            </div>
+
+            <!-- Trades Table -->
+            <section class="section-title">
+                <h3>Trade List <span class="trade-count-badge" id="filtered-trade-count">0 trades</span></h3>
+            </section>
+            <section class="trades-table-section">
+                <div class="table-card">
+                    <div class="table-controls">
+                        <div class="table-info">
+                            Showing <span id="showing-from">0</span> - <span id="showing-to">0</span> of <span id="showing-total">0</span>
+                        </div>
+                        <div class="table-sort">
+                            <label for="sort-by">Sort by:</label>
+                            <select id="sort-by" class="filter-select" onchange="applyTradeFilters()">
+                                <option value="entry_ts">Date</option>
+                                <option value="actual_pnl">P&L</option>
+                                <option value="symbol">Symbol</option>
+                                <option value="account_id">Account</option>
+                            </select>
+                            <select id="sort-order" class="filter-select" onchange="applyTradeFilters()">
+                                <option value="DESC">Desc</option>
+                                <option value="ASC">Asc</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table class="trades-table" id="tradesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Account</th>
+                                <th>Symbol</th>
+                                <th>Recommendation</th>
+                                <th>Confidence</th>
+                                <th>Hybrid Prob</th>
+                                <th>XGBoost Prob</th>
+                                <th>Outcome</th>
+                                <th>P&L</th>
+                                <th>Correct</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradesTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="tradesPagination">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== TAB 5: TRADE SCREENER ==================== -->
+        <div id="tab-screener" class="tab-content">
+            <!-- Section Header -->
+            <section class="section-header">
+                <h2>Trade Screener</h2>
+                <p class="section-subtitle">Discover high-probability setups using ML signals. Filter by win rate, instrument, and strategy to find edge.</p>
+            </section>
+
+            <!-- Actionable Insights -->
+            <section class="screener-insights">
+                <div class="insights-header">
+                    <span class="insights-icon">&#128161;</span>
+                    <h3>AI-Powered Insights</h3>
+                </div>
+                <div class="insights-grid" id="screenerInsights">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Summary Stats -->
+            <section class="screener-summary">
+                <div class="summary-stat-card">
+                    <span class="summary-stat-icon">&#11088;</span>
+                    <div class="summary-stat-content">
+                        <span class="summary-stat-value" id="screener-best-symbol">--</span>
+                        <span class="summary-stat-label">Best Symbol</span>
+                    </div>
+                </div>
+                <div class="summary-stat-card">
+                    <span class="summary-stat-icon">&#128293;</span>
+                    <div class="summary-stat-content">
+                        <span class="summary-stat-value" id="screener-hot-count">0</span>
+                        <span class="summary-stat-label">HOT Signals</span>
+                    </div>
+                </div>
+                <div class="summary-stat-card">
+                    <span class="summary-stat-icon">&#127919;</span>
+                    <div class="summary-stat-content">
+                        <span class="summary-stat-value" id="screener-high-conf-accuracy">0%</span>
+                        <span class="summary-stat-label">High Confidence Accuracy</span>
+                    </div>
+                </div>
+                <div class="summary-stat-card warning">
+                    <span class="summary-stat-icon">&#9888;</span>
+                    <div class="summary-stat-content">
+                        <span class="summary-stat-value" id="screener-worst-symbol">--</span>
+                        <span class="summary-stat-label">Avoid Symbol</span>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Best Symbol:</strong> Highest ML accuracy combined with good win rate. <strong>HOT Signals:</strong> Symbols where ML strongly recommends action.
+                    <strong>High Confidence Accuracy:</strong> How often the model is correct when most certain. Target <span class="positive">>70%</span> for reliable signals.
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <section class="section-title">
+                <h3>Filters</h3>
+            </section>
+            <section class="screener-filters">
+                <div class="filter-group">
+                    <label for="screener-signal">Signal Strength</label>
+                    <select id="screener-signal" class="filter-select">
+                        <option value="">All Signals</option>
+                        <option value="HOT">HOT</option>
+                        <option value="STRONG">STRONG</option>
+                        <option value="GOOD">GOOD</option>
+                        <option value="NEUTRAL">NEUTRAL</option>
+                        <option value="WEAK">WEAK</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="screener-min-trades">Min Trades</label>
+                    <select id="screener-min-trades" class="filter-select">
+                        <option value="0">Any</option>
+                        <option value="10">10+</option>
+                        <option value="25">25+</option>
+                        <option value="50">50+</option>
+                        <option value="100">100+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="screener-min-accuracy">Min ML Accuracy</label>
+                    <select id="screener-min-accuracy" class="filter-select">
+                        <option value="0">Any</option>
+                        <option value="60">60%+</option>
+                        <option value="70">70%+</option>
+                        <option value="80">80%+</option>
+                        <option value="90">90%+</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="filter-btn apply" onclick="applyScreenerFilters()">Apply Filters</button>
+                    <button class="filter-btn reset" onclick="resetScreenerFilters()">Reset</button>
+                </div>
+            </section>
+
+            <!-- Top Opportunities Table -->
+            <section class="section-title">
+                <h3>Top Opportunities <span class="signal-badge hot">Best ML Performance</span></h3>
+            </section>
+            <section class="screener-table-section">
+                <div class="table-card">
+                    <table class="screener-table" id="screenerOpportunities">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Signal</th>
+                                <th>Trades</th>
+                                <th>Win Rate</th>
+                                <th>ML Accuracy</th>
+                                <th>TAKE Accuracy</th>
+                                <th>High Conf Acc</th>
+                                <th>Total P&L</th>
+                                <th>Avg P&L</th>
+                                <th>Risk/Reward</th>
+                            </tr>
+                        </thead>
+                        <tbody id="screenerOpportunitiesBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="table-info" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="pagination-info">Showing <span id="opportunities-showing-from">0</span> - <span id="opportunities-showing-to">0</span> of <span id="opportunities-showing-total">0</span> symbols</span>
+                        <div class="pagination" id="opportunitiesPagination">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Signal:</strong> <span class="positive">HOT/STRONG</span> = high ML confidence, prioritize these. <strong>TAKE Accuracy:</strong> How often TAKE signals lead to wins.
+                    <strong>High Conf Acc:</strong> Accuracy when model is most certain. Combine high trades count + high accuracy for reliable opportunities.
+                </div>
+            </div>
+
+            <!-- Symbols to Avoid -->
+            <section class="section-title">
+                <h3>Symbols to Avoid <span class="signal-badge weak">Low ML Performance</span></h3>
+            </section>
+            <section class="screener-table-section">
+                <div class="table-card avoid-table">
+                    <table class="screener-table" id="screenerAvoid">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Signal</th>
+                                <th>Trades</th>
+                                <th>Win Rate</th>
+                                <th>ML Accuracy</th>
+                                <th>TAKE Accuracy</th>
+                                <th>Total P&L</th>
+                                <th>Why Avoid</th>
+                            </tr>
+                        </thead>
+                        <tbody id="screenerAvoidBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="table-info" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="pagination-info">Showing <span id="avoid-showing-from">0</span> - <span id="avoid-showing-to">0</span> of <span id="avoid-showing-total">0</span> symbols</span>
+                        <div class="pagination" id="avoidPagination">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Avoid Symbols:</strong> Low ML accuracy or poor historical performance. <span class="negative">WEAK signals</span> = model struggles to predict.
+                    <strong>Why Avoid:</strong> Shows the main reason—whether it's low accuracy, negative P&L, or poor risk/reward ratio.
+                </div>
+            </div>
+
+            <!-- Account Performance Ranking -->
+            <section class="section-title">
+                <h3>Account Performance Ranking</h3>
+            </section>
+            <section class="screener-table-section">
+                <div class="table-card">
+                    <table class="screener-table" id="screenerAccounts">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Account</th>
+                                <th>Trades</th>
+                                <th>Win Rate</th>
+                                <th>ML Accuracy</th>
+                                <th>Total P&L</th>
+                                <th>Sharpe</th>
+                                <th>Beat Market</th>
+                                <th>Outperformance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="screenerAccountsBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="table-info" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="pagination-info">Showing <span id="accounts-showing-from">0</span> - <span id="accounts-showing-to">0</span> of <span id="accounts-showing-total">0</span> accounts</span>
+                        <div class="pagination" id="accountsPagination">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="interpretation-guide compact">
+                <div class="guide-header">
+                    <span class="guide-icon">&#128161;</span>
+                    <span class="guide-title">How to Interpret</span>
+                </div>
+                <div class="guide-content">
+                    <strong>Rank:</strong> Accounts sorted by composite score (P&L, Sharpe, ML accuracy). <strong>Beat Market:</strong> <span class="positive">Yes</span> = outperformed S&P 500.
+                    <strong>Sharpe >1</strong> is good, <strong>>2</strong> is excellent. Higher outperformance % means your active trading adds more value vs passive investing.
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 6: MARKET DATA ==================== -->
+        <div id="tab-market" class="tab-content">
+            <!-- Section Header -->
+            <section class="section-header">
+                <h2>Market Data</h2>
+                <p class="section-subtitle">Explore historical price data for 297+ instruments. View charts, returns, and volatility metrics.</p>
+            </section>
+
+            <!-- Market Summary Cards -->
+            <section class="market-summary-grid" id="marketSummaryGrid">
+                <!-- Populated by JavaScript -->
+            </section>
+
+            <!-- Symbol Selector and Chart -->
+            <section class="market-chart-section">
+                <div class="market-chart-controls">
+                    <div class="control-group">
+                        <label for="marketSymbolSelect">Symbol:</label>
+                        <select id="marketSymbolSelect" class="filter-select">
+                            <option value="">Select a symbol...</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="marketTimeframe">Timeframe:</label>
+                        <select id="marketTimeframe" class="filter-select">
+                            <option value="30">30 Days</option>
+                            <option value="90">90 Days</option>
+                            <option value="180">6 Months</option>
+                            <option value="365" selected>1 Year</option>
+                            <option value="730">2 Years</option>
+                            <option value="1825">5 Years</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chart-card market-price-chart">
+                    <h3 id="marketChartTitle">Select a Symbol</h3>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="marketPriceChart"></canvas>
+                    </div>
+                    <div class="interpretation-guide">
+                        <div class="guide-header">
+                            <span class="guide-icon">&#128161;</span>
+                            <span class="guide-title">How to Interpret</span>
+                        </div>
+                        <div class="guide-content">
+                            <strong>Price Chart:</strong> Shows historical closing prices. Look for trends (upward/downward), support/resistance levels, and volatility patterns.
+                            <strong>Volume spikes</strong> often precede major price moves. Compare current price to 52W High/Low to assess relative value.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Symbol Stats -->
+            <section class="market-stats-section" id="marketStatsSection" style="display: none;">
+                <div class="market-stats-grid">
+                    <div class="market-stat-card">
+                        <span class="market-stat-label">Current Price</span>
+                        <span class="market-stat-value" id="market-current-price">--</span>
+                    </div>
+                    <div class="market-stat-card">
+                        <span class="market-stat-label">Daily Change</span>
+                        <span class="market-stat-value" id="market-daily-change">--</span>
+                    </div>
+                    <div class="market-stat-card">
+                        <span class="market-stat-label">52W High</span>
+                        <span class="market-stat-value" id="market-52w-high">--</span>
+                    </div>
+                    <div class="market-stat-card">
+                        <span class="market-stat-label">52W Low</span>
+                        <span class="market-stat-value" id="market-52w-low">--</span>
+                    </div>
+                    <div class="market-stat-card">
+                        <span class="market-stat-label">Avg Volume</span>
+                        <span class="market-stat-value" id="market-avg-volume">--</span>
+                    </div>
+                    <div class="market-stat-card">
+                        <span class="market-stat-label">Volatility</span>
+                        <span class="market-stat-value" id="market-volatility">--</span>
+                    </div>
+                </div>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>52W High/Low:</strong> Price near high = expensive, near low = potential value (or trouble). <strong>Volatility:</strong> <span class="negative">High</span> = larger price swings, more risk.
+                        <strong>Daily Change:</strong> <span class="positive">Green</span> = up, <span class="negative">Red</span> = down from previous close. Large moves may signal news or earnings.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="tab-database" class="tab-content">
+            <!-- Section Header -->
+            <section class="section-header">
+                <h2>Database Explorer</h2>
+                <p class="section-subtitle">View the ER diagram, browse table schemas, and run custom SQL queries to explore the underlying data.</p>
+            </section>
+
+            <!-- Database Stats -->
+            <section class="db-stats-section">
+                <div class="db-stats-grid">
+                    <div class="db-stat-card">
+                        <span class="db-stat-value" id="db-table-count">0</span>
+                        <span class="db-stat-label">Tables</span>
+                    </div>
+                    <div class="db-stat-card">
+                        <span class="db-stat-value" id="db-total-rows">0</span>
+                        <span class="db-stat-label">Total Rows</span>
+                    </div>
+                    <div class="db-stat-card">
+                        <span class="db-stat-value" id="db-size">0</span>
+                        <span class="db-stat-label">Database Size</span>
+                    </div>
+                    <div class="db-stat-card">
+                        <span class="db-stat-value" id="db-index-count">0</span>
+                        <span class="db-stat-label">Indexes</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ER Diagram Section -->
+            <section class="db-er-section">
+                <div class="section-title">
+                    <h3>Entity-Relationship Diagram</h3>
+                    <p class="section-subtitle">Visual representation of table relationships</p>
+                </div>
+                <div class="er-diagram-container">
+                    <div class="er-diagram-placeholder" id="erDiagramContainer">
+                        <div class="mermaid" id="erDiagram">
+                            <!-- Mermaid ER diagram will be rendered here -->
+                        </div>
+                    </div>
+                    <div class="er-diagram-legend">
+                        <div class="legend-item"><span class="legend-pk">PK</span> Primary Key</div>
+                        <div class="legend-item"><span class="legend-fk">FK</span> Foreign Key</div>
+                        <div class="legend-item"><span class="legend-line">&#8212;&#8212;</span> Relationship</div>
+                    </div>
+                </div>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>ER Diagram:</strong> Shows how tables relate via foreign keys. Lines indicate joins. <strong>PK</strong> uniquely identifies rows.
+                        <strong>FK</strong> links to another table's PK. Use this to understand how to JOIN tables in your queries.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schema Browser -->
+            <section class="db-schema-section">
+                <div class="section-title">
+                    <h3>Schema Browser</h3>
+                    <p class="section-subtitle">Click a table to view its structure and sample data</p>
+                </div>
+                <div class="schema-browser">
+                    <div class="table-list" id="tableList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <div class="table-details" id="tableDetails">
+                        <div class="table-details-placeholder">
+                            <div class="placeholder-icon">&#128196;</div>
+                            <p>Select a table to view its schema</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>Schema Browser:</strong> Click tables on the left to see columns, types, and sample data. Use this to understand available fields before writing queries.
+                        <strong>Row counts</strong> indicate table size. Look for nullable columns and data types when building queries.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Interactive Query Section -->
+            <section class="db-query-section">
+                <div class="section-title">
+                    <h3>Interactive SQL Query</h3>
+                    <p class="section-subtitle">Run SELECT queries to explore the data</p>
+                </div>
+                <div class="query-container">
+                    <div class="query-input-area">
+                        <textarea id="sqlQuery" class="sql-input" placeholder="Enter your SQL query here...
+Example: SELECT * FROM accounts LIMIT 10"></textarea>
+                        <div class="query-controls">
+                            <button class="btn btn-primary" onclick="executeQuery()">
+                                <span>&#9654;</span> Run Query
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearQuery()">
+                                Clear
+                            </button>
+                            <div class="query-examples">
+                                <select id="queryExamples" onchange="loadExampleQuery()" class="filter-select">
+                                    <option value="">Load Example...</option>
+                                    <option value="accounts">View All Accounts</option>
+                                    <option value="top_trades">Top 10 Profitable Trades</option>
+                                    <option value="symbol_stats">P&L by Symbol</option>
+                                    <option value="ml_accuracy">ML Model Accuracy</option>
+                                    <option value="monthly_pnl">Monthly P&L Summary</option>
+                                    <option value="win_rate">Account Win Rates</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="query-results" id="queryResults">
+                        <div class="query-results-placeholder">
+                            <p>Query results will appear here</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="interpretation-guide compact">
+                    <div class="guide-header">
+                        <span class="guide-icon">&#128161;</span>
+                        <span class="guide-title">How to Interpret</span>
+                    </div>
+                    <div class="guide-content">
+                        <strong>SQL Query:</strong> Only SELECT queries are allowed for security. Use JOINs to combine tables (see ER diagram for relationships).
+                        <strong>Example queries</strong> in the dropdown show common analysis patterns. Results are limited to 1000 rows for performance.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== TAB 8: AI INVESTMENT ADVISOR ==================== -->
+        <div id="tab-advisor" class="tab-content">
+            <!-- Section Header -->
+            <section class="section-header">
+                <h2>AI Investment Advisor</h2>
+                <p class="section-subtitle">Chat with an AI that queries your data in real-time. Simulate investments, compare stocks, and get ML-backed recommendations.</p>
+            </section>
+
+            <!-- Advisor Status Card -->
+            <section class="advisor-status-section">
+                <div class="advisor-status-card" id="advisorStatusCard">
+                    <div class="status-indicator loading">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Checking AI Advisor status...</span>
+                    </div>
+                    <div class="status-features" id="advisorFeatures" style="display: none;">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Action Cards -->
+            <section class="advisor-quick-actions">
+                <div class="quick-action-card" onclick="sendAdvisorSuggestion('What stocks do you have data for?')">
+                    <span class="quick-action-icon">&#128202;</span>
+                    <div class="quick-action-content">
+                        <h4>View Available Stocks</h4>
+                        <p>See all instruments in the database</p>
+                    </div>
+                </div>
+                <div class="quick-action-card" onclick="sendAdvisorSuggestion('What are the top performing stocks by Sharpe ratio?')">
+                    <span class="quick-action-icon">&#11088;</span>
+                    <div class="quick-action-content">
+                        <h4>Top Performers</h4>
+                        <p>Find best risk-adjusted returns</p>
+                    </div>
+                </div>
+                <div class="quick-action-card" onclick="sendAdvisorSuggestion('If I invest $10,000 in SPY for 3 years, what returns can I expect?')">
+                    <span class="quick-action-icon">&#128176;</span>
+                    <div class="quick-action-content">
+                        <h4>Simulate Investment</h4>
+                        <p>Monte Carlo projections</p>
+                    </div>
+                </div>
+                <div class="quick-action-card" onclick="sendAdvisorSuggestion('Compare AAPL, MSFT, and GOOGL')">
+                    <span class="quick-action-icon">&#128200;</span>
+                    <div class="quick-action-content">
+                        <h4>Compare Stocks</h4>
+                        <p>Side-by-side analysis</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Investment Simulator Form -->
+            <section class="section-title">
+                <h3>Quick Investment Simulator</h3>
+            </section>
+            <section class="investment-simulator">
+                <div class="simulator-form">
+                    <div class="form-group">
+                        <label for="sim-symbol">Stock Symbol</label>
+                        <input type="text" id="sim-symbol" placeholder="e.g., SPY, AAPL, MSFT" class="simulator-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="sim-amount">Investment Amount ($)</label>
+                        <input type="number" id="sim-amount" placeholder="10000" value="10000" min="100" class="simulator-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="sim-years">Time Horizon (Years)</label>
+                        <select id="sim-years" class="simulator-input">
+                            <option value="1">1 Year</option>
+                            <option value="2">2 Years</option>
+                            <option value="3" selected>3 Years</option>
+                            <option value="4">4 Years</option>
+                            <option value="5">5 Years</option>
+                        </select>
+                    </div>
+                    <button class="simulator-btn" onclick="runSimulation()">
+                        <span>&#128640;</span> Simulate Investment
+                    </button>
+                </div>
+            </section>
+
+            <!-- Main Chat Interface -->
+            <section class="section-title">
+                <h3>Chat with AI Advisor</h3>
+            </section>
+            <section class="advisor-chat-section">
+                <div class="advisor-chat-container">
+                    <div id="advisor-messages" class="advisor-messages">
+                        <div class="advisor-message assistant">
+                            <div class="message-avatar">&#129302;</div>
+                            <div class="message-content">
+                                <p>Hello! I'm your AI Investment Advisor powered by Gemini. I have access to your trading database with:</p>
+                                <ul>
+                                    <li>297+ instruments with historical price data</li>
+                                    <li>ML predictions from hybrid CNN-XGBoost models</li>
+                                    <li>Over 1 million trade records</li>
+                                    <li>Performance metrics across 50 accounts</li>
+                                </ul>
+                                <p><strong>Ask me anything!</strong> Try questions like:</p>
+                                <ul class="suggestion-list">
+                                    <li onclick="sendAdvisorSuggestion('What does your ML model predict for TSLA?')">What does your ML model predict for TSLA?</li>
+                                    <li onclick="sendAdvisorSuggestion('If I invest $5,000 in AAPL for 2 years, what could I expect?')">If I invest $5,000 in AAPL for 2 years, what could I expect?</li>
+                                    <li onclick="sendAdvisorSuggestion('What is the portfolio summary?')">What is the portfolio summary?</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="advisor-input-container">
+                        <input type="text" id="advisor-input" placeholder="Ask about investments, stocks, or trading performance..." onkeypress="handleAdvisorKeypress(event)">
+                        <button id="advisor-send-btn" onclick="sendAdvisorMessage()">
+                            <span>&#10148;</span> Send
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Disclaimer -->
+            <section class="advisor-disclaimer">
+                <p><strong>Disclaimer:</strong> This AI advisor provides educational simulations based on historical data.
+                Past performance does not guarantee future results. All projections use Monte Carlo simulation with 1000 scenarios.
+                This is not financial advice - always consult a qualified financial advisor before making investment decisions.</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Metric Formula Modal -->
+    <div id="formulaModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="formula-name">Metric Name</h2>
+            <div class="formula-section">
+                <h3>Formula</h3>
+                <div class="formula-box" id="formula-formula">Formula here</div>
+            </div>
+            <div class="formula-section">
+                <h3>Explanation</h3>
+                <p id="formula-explanation">Explanation here</p>
+            </div>
+            <div class="formula-section">
+                <h3>How to Interpret</h3>
+                <p id="formula-interpretation">Interpretation here</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
