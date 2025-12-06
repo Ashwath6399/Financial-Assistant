@@ -53,9 +53,9 @@ yfinance>=0.2.35
 pandas-ta>=0.3.14b
 
 # ============================================================================
-# AI/LLM Integration (Optional - for ML model training scripts)
+# AI/LLM Integration (for AI advisor features)
 # ============================================================================
-# google-generativeai>=0.3.0  # Only needed if using AI advisor features
+google-genai>=1.0.0           # Google Gemini AI SDK
 
 # ============================================================================
 # UTILITIES
