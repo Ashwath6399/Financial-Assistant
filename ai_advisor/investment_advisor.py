@@ -24,7 +24,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import DB_PATH
 
 # Gemini API Configuration
-GEMINI_API_KEY = "AIzaSyAJc4KYB9cKnIalMT7OjH_Lbs41bREzxAs"
+# Set your API key as environment variable: export GEMINI_API_KEY="your-key-here"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY_HERE")
 GEMINI_MODEL = "gemini-2.0-flash"
 
 # Initialize Gemini client
