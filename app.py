@@ -1510,5 +1510,91 @@ def execute_sql_query():
             'error': str(e)
         }), 400
 
+# =============================================================================
+# AI ADVISOR ENDPOINTS
+# =============================================================================
+
+@app.route('/api/advisor/status')
+def get_advisor_status():
+    """Check if AI Advisor is available"""
+    try:
+        # Check if Gemini API key is configured
+        gemini_key = os.environ.get("GEMINI_API_KEY", "")
+
+        if not gemini_key or gemini_key == "YOUR_GEMINI_API_KEY_HERE":
+            return jsonify({
+                'available': False,
+                'reason': 'GEMINI_API_KEY environment variable not set',
+                'features': []
+            })
+
+        # Try to import the advisor module
+        try:
+            from ai_advisor.investment_advisor import chat_with_advisor
+            return jsonify({
+                'available': True,
+                'model': 'gemini-2.0-flash',
+                'features': [
+                    'Query trading database for real market data',
+                    'Analyze historical performance of instruments',
+                    'Generate personalized investment recommendations',
+                    'Simulate portfolio returns based on actual data'
+                ]
+            })
+        except ImportError as e:
+            return jsonify({
+                'available': False,
+                'reason': f'AI Advisor module not available: {str(e)}',
+                'features': []
+            })
+    except Exception as e:
+        return jsonify({
+            'available': False,
+            'reason': str(e),
+            'features': []
+        })
+
+@app.route('/api/advisor', methods=['POST'])
+def advisor_chat():
+    """Chat with AI Investment Advisor"""
+    try:
+        # Check if API key is set
+        gemini_key = os.environ.get("GEMINI_API_KEY", "")
+        if not gemini_key or gemini_key == "YOUR_GEMINI_API_KEY_HERE":
+            return jsonify({
+                'error': 'GEMINI_API_KEY environment variable not set. Please set it to use the AI Advisor.'
+            }), 503
+
+        # Import the advisor
+        try:
+            from ai_advisor.investment_advisor import chat_with_advisor
+        except ImportError as e:
+            return jsonify({
+                'error': f'AI Advisor module not available: {str(e)}'
+            }), 503
+
+        # Get request data
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        history = data.get('history', [])
+
+        if not message:
+            return jsonify({'error': 'No message provided'}), 400
+
+        # Call the AI advisor
+        result = chat_with_advisor(message, history)
+
+        return jsonify({
+            'response': result['response'],
+            'history': result['conversation_history']
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': f'AI Advisor error: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
