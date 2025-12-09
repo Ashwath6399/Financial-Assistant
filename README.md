@@ -112,7 +112,7 @@ trading-journal/
 
 ## Database Schema
 
-The SQLite database contains 15 tables:
+The SQLite database contains 11 tables:
 
 ### Core Tables
 | Table | Description |
