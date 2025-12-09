@@ -301,14 +301,7 @@ function updateMetrics(metrics, risk) {
     // Net P&L
     updateMetricCard('net_pnl', formatCurrency(metrics.net_pnl), metrics.net_pnl >= 0);
 
-    // Win Rate (stored as decimal, convert to percentage)
-    const winRateValue = metrics.win_rate * 100;
-    updateMetricCard('win_rate', formatPercent(winRateValue), winRateValue >= 50);
-
-    // Total Trades
-    updateMetricCard('total_trades', metrics.total_trades, true);
-
-    // Calculate derived metrics
+    // Calculate derived metrics first (needed for win rate evaluation)
     const totalTrades = metrics.total_trades || 0;
     const winRate = metrics.win_rate || 0;
     const winningTrades = Math.round(totalTrades * winRate);
@@ -319,6 +312,15 @@ function updateMetrics(metrics, risk) {
     const grossLoss = losingTrades * avgLoss;
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
     const expectancy = (winRate * avgWin) - ((1 - winRate) * avgLoss);
+
+    // Win Rate (stored as decimal, convert to percentage)
+    // Evaluate win rate in context: if profit factor > 1, the strategy is profitable regardless of win rate
+    const winRateValue = metrics.win_rate * 100;
+    const winRateIsGood = profitFactor >= 1 || winRateValue >= 50;
+    updateMetricCard('win_rate', formatPercent(winRateValue), winRateIsGood);
+
+    // Total Trades
+    updateMetricCard('total_trades', metrics.total_trades, true);
 
     // Profit Factor
     updateMetricCard('profit_factor', formatNumber(profitFactor, 2), profitFactor >= 1);
