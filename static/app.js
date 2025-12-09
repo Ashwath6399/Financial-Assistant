@@ -2026,15 +2026,62 @@ let marketPriceChart = null;
 let currentMarketSymbol = null;
 let currentSectorFilter = 'all';
 
-// Sector mappings for filtering market data
+// Sector mappings for filtering market data (304 symbols categorized)
 const SECTOR_MAPPINGS = {
-    tech: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'CRM', 'ORCL', 'ADBE', 'NFLX', 'PYPL'],
-    finance: ['JPM', 'BAC', 'GS', 'MS', 'C', 'WFC', 'BLK', 'SCHW'],
-    consumer: ['WMT', 'HD', 'NKE', 'MCD', 'SBUX', 'TGT', 'DIS'],
-    healthcare: ['JNJ', 'UNH', 'PFE', 'ABBV', 'TMO', 'ABT'],
-    energy: ['XOM', 'CVX', 'COP', 'SLB'],
-    etfs: ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'VOO', 'GLD', 'SLV', 'TLT', 'HYG'],
-    crypto: ['BTC-USD', 'ETH-USD', 'BNB-USD', 'ADA-USD', 'SOL-USD']
+    tech: [
+        'AAPL', 'ADBE', 'ADI', 'AMAT', 'AMD', 'AMZN', 'ATVI', 'AVGO', 'CRM', 'CSCO',
+        'DXCM', 'EA', 'ENTG', 'FISV', 'GOOG', 'GOOGL', 'GRMN', 'IBM', 'INTC', 'ISRG',
+        'KLAC', 'LRCX', 'LYFT', 'MA', 'MCHP', 'META', 'MPWR', 'MRVL', 'MSFT', 'MU',
+        'NFLX', 'NOW', 'NVDA', 'NXPI', 'ON', 'ORCL', 'PINS', 'PYPL', 'QCOM', 'QRVO',
+        'SHOP', 'SNAP', 'SQ', 'SWKS', 'TSLA', 'TTWO', 'TWLO', 'TXN', 'UBER', 'V', 'XLNX'
+    ],
+    finance: [
+        'AXP', 'BAC', 'BLK', 'BXP', 'C', 'CFG', 'CME', 'COF', 'DFS', 'FIS', 'FITB',
+        'GS', 'HBAN', 'ICE', 'JPM', 'KEY', 'MA', 'MCO', 'MS', 'MSCI', 'MTB',
+        'PNC', 'RF', 'SCHW', 'SPGI', 'SYF', 'TFC', 'USB', 'V', 'WFC'
+    ],
+    consumer: [
+        'AMZN', 'BBY', 'CAG', 'CHTR', 'CL', 'CMCSA', 'COST', 'DHI', 'DIS', 'FOX',
+        'FOXA', 'GIS', 'HD', 'HRL', 'HSY', 'K', 'KMB', 'KO', 'LEN', 'LOW',
+        'MCD', 'MKC', 'NKE', 'NVR', 'PARA', 'PEP', 'PG', 'PHM', 'POOL', 'ROST',
+        'SBUX', 'SJM', 'T', 'TGT', 'TJX', 'TMUS', 'TSN', 'VZ', 'WBD', 'WMT'
+    ],
+    healthcare: [
+        'ABBV', 'ABT', 'ALGN', 'AMGN', 'AZN', 'BDX', 'BIIB', 'BMY', 'BSX', 'CI',
+        'CNC', 'CVS', 'DHR', 'DVA', 'ELV', 'EW', 'GILD', 'HCA', 'HOLX', 'HUM', 'ISRG',
+        'JNJ', 'LLY', 'MDT', 'MOH', 'MRK', 'MRNA', 'NVO', 'PFE', 'REGN', 'SNY',
+        'SYK', 'THC', 'TMO', 'UHS', 'UNH', 'VRTX', 'ZBH'
+    ],
+    energy: [
+        'BKR', 'COP', 'CVX', 'DVN', 'EOG', 'FANG', 'HAL', 'HES', 'MPC', 'OXY',
+        'PSX', 'PXD', 'SLB', 'VLO', 'XOM'
+    ],
+    industrials: [
+        'APD', 'BA', 'CAT', 'DD', 'DE', 'DOW', 'ECL', 'EMR', 'ETN', 'FCX',
+        'FDX', 'GD', 'GE', 'HON', 'ITW', 'LIN', 'LMT', 'MLM', 'MMM', 'NOC',
+        'NUE', 'PPG', 'RTX', 'SHW', 'UPS', 'VMC'
+    ],
+    utilities: [
+        'AEP', 'ATO', 'AWK', 'D', 'DUK', 'ED', 'ES', 'EXC', 'NEE', 'NI',
+        'PEG', 'SO', 'SRE', 'WEC', 'XEL'
+    ],
+    realestate: [
+        'AMT', 'ARE', 'AVB', 'CCI', 'DLR', 'EQIX', 'EQR', 'O', 'PLD', 'PSA',
+        'SLG', 'SPG', 'WELL', 'VTR'
+    ],
+    materials: [
+        'ALB', 'CF', 'CTVA', 'FCX', 'LIN', 'NEM', 'NUE', 'PPG', 'SHW', 'VMC'
+    ],
+    etfs: [
+        'AGG', 'BND', 'BNDX', 'DBA', 'DBC', 'DIA', 'EEM', 'EFA', 'EMB', 'EWG',
+        'EWJ', 'EWT', 'EWU', 'EWY', 'EWZ', 'FXI', 'GDX', 'GDXJ', 'GLD', 'GSG',
+        'HYG', 'IEF', 'IEMG', 'IJH', 'IJR', 'INDA', 'IVV', 'IWM', 'JNK', 'LQD',
+        'MCHI', 'MDY', 'MUB', 'PALL', 'PDBC', 'PPLT', 'QQQ', 'SHY', 'SLV', 'SPY',
+        'TIP', 'TLT', 'UNG', 'USO', 'VB', 'VCIT', 'VCLT', 'VCSH', 'VEA', 'VFH',
+        'VGK', 'VGT', 'VHT', 'VIS', 'VOO', 'VTI', 'VTV', 'VUG', 'VWO', 'VXF',
+        'VXUS', 'WEAT', 'CORN', 'CPER', 'XLB', 'XLC', 'XLE', 'XLF', 'XLI', 'XLK',
+        'XLP', 'XLRE', 'XLU', 'XLV', 'XLY'
+    ]
 };
 
 // Get sector for a symbol
