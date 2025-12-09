@@ -1387,19 +1387,23 @@ def get_database_info():
     """Get database statistics"""
     conn = get_db_connection()
 
-    # Get table count
+    # Get table count (only tables with data)
     tables = conn.execute('''
         SELECT name FROM sqlite_master
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
         ORDER BY name
     ''').fetchall()
-    table_count = len(tables)
 
-    # Get total rows across all tables
+    # Filter to only tables with data and count total rows
     total_rows = 0
+    tables_with_data = 0
     for table in tables:
         count = conn.execute(f'SELECT COUNT(*) FROM "{table["name"]}"').fetchone()[0]
         total_rows += count
+        if count > 0:
+            tables_with_data += 1
+
+    table_count = tables_with_data
 
     # Get index count
     index_count = conn.execute('''
@@ -1421,7 +1425,7 @@ def get_database_info():
 
 @app.route('/api/database/tables')
 def get_database_tables():
-    """Get all tables with row counts"""
+    """Get all tables with row counts (only tables with data)"""
     conn = get_db_connection()
 
     tables = conn.execute('''
@@ -1434,10 +1438,12 @@ def get_database_tables():
     for table in tables:
         table_name = table['name']
         count = conn.execute(f'SELECT COUNT(*) FROM "{table_name}"').fetchone()[0]
-        result.append({
-            'name': table_name,
-            'row_count': count
-        })
+        # Only include tables that have data
+        if count > 0:
+            result.append({
+                'name': table_name,
+                'row_count': count
+            })
 
     conn.close()
     return jsonify(result)
@@ -1518,35 +1524,24 @@ def execute_sql_query():
 def get_advisor_status():
     """Check if AI Advisor is available"""
     try:
-        # Check if Gemini API key is configured
-        gemini_key = os.environ.get("GEMINI_API_KEY", "")
-
-        if not gemini_key or gemini_key == "YOUR_GEMINI_API_KEY_HERE":
-            return jsonify({
-                'available': False,
-                'reason': 'GEMINI_API_KEY environment variable not set',
-                'features': []
-            })
-
         # Try to import the advisor module
-        try:
-            from ai_advisor.investment_advisor import chat_with_advisor
-            return jsonify({
-                'available': True,
-                'model': 'gemini-2.0-flash',
-                'features': [
-                    'Query trading database for real market data',
-                    'Analyze historical performance of instruments',
-                    'Generate personalized investment recommendations',
-                    'Simulate portfolio returns based on actual data'
-                ]
-            })
-        except ImportError as e:
-            return jsonify({
-                'available': False,
-                'reason': f'AI Advisor module not available: {str(e)}',
-                'features': []
-            })
+        from ai_advisor.investment_advisor import chat_with_advisor
+        return jsonify({
+            'available': True,
+            'model': 'gemini-2.0-flash',
+            'features': [
+                'Query trading database for real market data',
+                'Analyze historical performance of instruments',
+                'Generate personalized investment recommendations',
+                'Simulate portfolio returns based on actual data'
+            ]
+        })
+    except ImportError as e:
+        return jsonify({
+            'available': False,
+            'reason': f'AI Advisor module not available: {str(e)}',
+            'features': []
+        })
     except Exception as e:
         return jsonify({
             'available': False,
@@ -1558,20 +1553,8 @@ def get_advisor_status():
 def advisor_chat():
     """Chat with AI Investment Advisor"""
     try:
-        # Check if API key is set
-        gemini_key = os.environ.get("GEMINI_API_KEY", "")
-        if not gemini_key or gemini_key == "YOUR_GEMINI_API_KEY_HERE":
-            return jsonify({
-                'error': 'GEMINI_API_KEY environment variable not set. Please set it to use the AI Advisor.'
-            }), 503
-
         # Import the advisor
-        try:
-            from ai_advisor.investment_advisor import chat_with_advisor
-        except ImportError as e:
-            return jsonify({
-                'error': f'AI Advisor module not available: {str(e)}'
-            }), 503
+        from ai_advisor.investment_advisor import chat_with_advisor
 
         # Get request data
         data = request.get_json()
@@ -1589,6 +1572,10 @@ def advisor_chat():
             'history': result['conversation_history']
         })
 
+    except ImportError as e:
+        return jsonify({
+            'error': f'AI Advisor module not available: {str(e)}'
+        }), 503
     except Exception as e:
         import traceback
         traceback.print_exc()
