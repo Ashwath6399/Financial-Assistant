@@ -2024,6 +2024,28 @@ function resetScreenerFilters() {
 let marketData = null;
 let marketPriceChart = null;
 let currentMarketSymbol = null;
+let currentSectorFilter = 'all';
+
+// Sector mappings for filtering market data
+const SECTOR_MAPPINGS = {
+    tech: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'CRM', 'ORCL', 'ADBE', 'NFLX', 'PYPL'],
+    finance: ['JPM', 'BAC', 'GS', 'MS', 'C', 'WFC', 'BLK', 'SCHW'],
+    consumer: ['WMT', 'HD', 'NKE', 'MCD', 'SBUX', 'TGT', 'DIS'],
+    healthcare: ['JNJ', 'UNH', 'PFE', 'ABBV', 'TMO', 'ABT'],
+    energy: ['XOM', 'CVX', 'COP', 'SLB'],
+    etfs: ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'VOO', 'GLD', 'SLV', 'TLT', 'HYG'],
+    crypto: ['BTC-USD', 'ETH-USD', 'BNB-USD', 'ADA-USD', 'SOL-USD']
+};
+
+// Get sector for a symbol
+function getSymbolSector(symbol) {
+    for (const [sector, symbols] of Object.entries(SECTOR_MAPPINGS)) {
+        if (symbols.includes(symbol)) {
+            return sector;
+        }
+    }
+    return 'other';
+}
 
 async function loadMarketData() {
     try {
@@ -2038,7 +2060,10 @@ async function loadMarketData() {
 
         marketData = { summary, symbols };
 
-        // Populate symbol cards
+        // Initialize sector filter tabs
+        initSectorFilterTabs();
+
+        // Populate symbol cards (filtered by current sector)
         populateMarketSummaryGrid(summary);
 
         // Populate symbol dropdown
@@ -2049,25 +2074,56 @@ async function loadMarketData() {
     }
 }
 
+function initSectorFilterTabs() {
+    const tabs = document.querySelectorAll('.sector-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Update active state
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            // Update filter and refresh grid
+            currentSectorFilter = tab.dataset.sector;
+            if (marketData) {
+                populateMarketSummaryGrid(marketData.summary);
+            }
+        });
+    });
+}
+
 function populateMarketSummaryGrid(summary) {
     const grid = document.getElementById('marketSummaryGrid');
     if (!grid) return;
 
-    let html = '';
-    summary.forEach(item => {
-        const changeClass = item.change_pct >= 0 ? 'positive' : 'negative';
-        const changeSign = item.change_pct >= 0 ? '+' : '';
+    // Filter by sector
+    let filteredSummary = summary;
+    if (currentSectorFilter !== 'all') {
+        const sectorSymbols = SECTOR_MAPPINGS[currentSectorFilter] || [];
+        filteredSummary = summary.filter(item => sectorSymbols.includes(item.symbol));
+    }
 
-        html += `
-            <div class="market-symbol-card" onclick="selectMarketSymbol('${item.symbol}')">
-                <div class="market-symbol-name">${item.symbol}</div>
-                <div class="market-symbol-price">${formatCurrency(item.price)}</div>
-                <div class="market-symbol-change ${changeClass}">
-                    ${changeSign}${item.change_pct?.toFixed(2) || '0.00'}%
+    let html = '';
+
+    if (filteredSummary.length === 0) {
+        html = '<div class="no-data-message">No instruments found in this category</div>';
+    } else {
+        filteredSummary.forEach(item => {
+            const changeClass = item.change_pct >= 0 ? 'positive' : 'negative';
+            const changeSign = item.change_pct >= 0 ? '+' : '';
+            const sector = getSymbolSector(item.symbol);
+            const sectorClass = sector !== 'other' ? `sector-${sector}` : '';
+
+            html += `
+                <div class="market-symbol-card ${sectorClass}" onclick="selectMarketSymbol('${item.symbol}')">
+                    <div class="market-symbol-name">${item.symbol}</div>
+                    <div class="market-symbol-price">${formatCurrency(item.price)}</div>
+                    <div class="market-symbol-change ${changeClass}">
+                        ${changeSign}${item.change_pct?.toFixed(2) || '0.00'}%
+                    </div>
                 </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    }
 
     grid.innerHTML = html;
 }
